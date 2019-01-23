@@ -20,6 +20,9 @@ startTime = time.time()    #current timer
 # It's intended for properly exiting the program.
 def ctrlC(signum, frame):
     print("Exiting")
+    # Stop the servos
+    pwm.set_pwm(LSERVO, 0, 0);
+    pwm.set_pwm(RSERVO, 0, 0);
     GPIO.cleanup()
     exit()
 
@@ -28,35 +31,8 @@ signal.signal(signal.SIGINT, ctrlC)
     
 # Set the pin numbering scheme to the numbering shown on the robot itself.
 GPIO.setmode(GPIO.BCM)
-
-# Prevent the program from exiting by adding a looping delay.
-#while True:
-    #time.sleep(1)
 	
-# The servo hat uses its own numbering scheme within the Adafruit library.
-# 0 represents the first servo, 1 for the second, and so on.
-LSERVO = 0
-RSERVO = 1
 
-# This function is called when Ctrl+C is pressed.
-# It's intended for properly exiting the program.
-def ctrlC(signum, frame):
-    print("Exiting")
-    
-    # Stop the servos
-    pwm.set_pwm(LSERVO, 0, 0);
-    pwm.set_pwm(RSERVO, 0, 0);
-    
-    exit()
-
-# Attach the Ctrl+C signal interrupt
-signal.signal(signal.SIGINT, ctrlC)
-    
-# Initialize the servo hat library.
-pwm = Adafruit_PCA9685.PCA9685()
-
-# 50Hz is used for the frequency of the servos.
-pwm.set_pwm_freq(50)
 
 ################ Encoder Functions #################
 
@@ -133,9 +109,32 @@ def initEncoders():
 # Write an initial value of 1.5, which keeps the servos stopped.
 # Due to how servos work, and the design of the Adafruit library, 
 # the value must be divided by 20 and multiplied by 4096.
+
+# The servo hat uses its own numbering scheme within the Adafruit library.
+# 0 represents the first servo, 1 for the second, and so on.
+LSERVO = 0
+RSERVO = 1
+    
+# Initialize the servo hat library.
+pwm = Adafruit_PCA9685.PCA9685()
+
+# 50Hz is used for the frequency of the servos.
+pwm.set_pwm_freq(50)
+
 pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096));
 pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096));
 
+
+
+def calibrateSpeeds():
+    
+def setSpeeds():
+    
+def setSpeedsRPS():
+
+def setSpeedsIPS():
+
+#Start the timer
 startTime = time.time()
 
 while True:
