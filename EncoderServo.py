@@ -8,6 +8,8 @@ import Adafruit_PCA9685
 import RPi.GPIO as GPIO
 import signal
 import math
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 rCount = 0   #current count for each wheel
 lCount = 0   
@@ -127,12 +129,30 @@ pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096));
 
 
 def calibrateSpeeds():
-    
-def setSpeeds():
-    
-def setSpeedsRPS():
+    Initial speed data = dict(
+	0 = 0,
+    #Dictionary to initialize we will use our set speed as the key and it speed measurement as the value
+	#for our key value pair this will help us translate our user input into a new speed
+	#for RPS and IPS
+	)
+#Will change the speed of the machine
+def setSpeeds(Rwheel,Lwheel):
+	RightW = Rwheel
+	LeftW = Lwheel
+	
+	#We can use our calibration function for speeds to get data to help with our setSpeeds function
+	SamountR = #calculation to decide what to change our Right pwm number to
+	SamountL = #calculation to decide what to change our Left pwm number to
+	
+	pwm.set_pwm(LSERVO, 0, math.floor(SamountL / 20 * 4096))
+	pwm.set_pwm(RSERVO, 0, math.floor(SamountR / 20 * 4096))
+   
+   
+#Will set the speed in rotations per second
+def setSpeedsRPS(Rwheel,Lwheel):
 
-def setSpeedsIPS():
+#Will set the speed in inches per second
+def setSpeedsIPS(Rwheel,Lwheel):
 
 #Start the timer
 startTime = time.time()
