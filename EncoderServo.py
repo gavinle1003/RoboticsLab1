@@ -8,13 +8,18 @@ import Adafruit_PCA9685
 import RPi.GPIO as GPIO
 import signal
 import math
-import plotly.plotly as py
-import plotly.graph_objs as go
+#import plotly.plotly as py
+#import plotly.graph_objs as go
 import random
+
 rCount = 0   #current count for each wheel
 lCount = 0   
 prc = 0      #previous count
 plc = 0
+
+# For calibrate speeds, contains acccurate speeds
+leftSpeeds = {'0.0':'1.5'}
+rightSpeeds = {'0.0':'1.5'}
 
 startTime = time.time()    #current timer
 
@@ -25,7 +30,7 @@ def ctrlC(signum, frame):
     # Stop the servos
     pwm.set_pwm(LSERVO, 0, 0);
     pwm.set_pwm(RSERVO, 0, 0);
-    GPIO.cleanup()
+    #GPIO.cleanup()
     exit()
 
 # Attach the Ctrl+C signal interrupt
@@ -46,13 +51,11 @@ RENCODER = 18
 def onLeftEncode(pin):
     global lCount
     lCount = lCount + 1
-    print(lCount)
 
 # This function is called when the right encoder detects a rising edge signal.
 def onRightEncode(pin):
     global rCount
     rCount = rCount + 1
-    print(rCount)
 
 # Resets tick counts to zero, store ticks before resetting
 def resetCounts():
@@ -84,11 +87,11 @@ def getSpeeds():
     global lcount
     global rcount
     if (lCount > 0):
-        lSpeed = (currTime - startTime) / (lCount / 32)
+        lSpeed =  (lCount / 32) / (currTime - startTime)
     else:
         lSpeed = 0
     if (rCount > 0):
-        rSpeed = (currTime - startTime) / (rCount / 32)
+        rSpeed =  (rCount / 32) / (currTime - startTime) 
     else:
         rSpeed = 0
     return (lSpeed, rSpeed)
@@ -104,6 +107,12 @@ def initEncoders():
     # Attach a rising edge interrupt to the encoder pins
     GPIO.add_event_detect(LENCODER, GPIO.RISING, onLeftEncode)
     GPIO.add_event_detect(RENCODER, GPIO.RISING, onRightEncode)
+    
+    onLeftEncode(LENCODER)
+    onRightEncode(RENCODER)
+    
+    #Start the timer
+    startTime = time.time()
     
 
 ################ Servo Functions ###################
@@ -127,62 +136,78 @@ pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
 pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
 
 
-
-def calibrateSpeeds():
 #Dictionary to initialize we will use our set speed as the key and it speed measurement as the value
-	#for our key value pair this will help us translate our user input into a new speed
-	#for RPS and IPS
-    Initial speed data = dict(
-	1.5 = (0.0,0.0),
+#for our key value pair this will help us translate our user input into a new speed
+#for RPS and IPS
+def calibrateSpeeds():
+    global SpeedData
+    global startTime
+
+    #Calibrate Left wheel
+    for i in range(130, 151):
+        x = float(i/100)
+        startTime = time.time()
+        pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
+        pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
+        time.sleep(1)
+        #gets speeds of wheels after it changes we will need to add in time wait for the specified number of seconds.
+	#along with a 1 second interval
+        y = getSpeeds()
+        resetCounts()
+
+	#each time we get these speeds we will enter the values into our dictionary
+	#this will make it easier to print our graph
+        leftSpeeds[y[0]] = x
+        
+        print("Left wheel speed: ", leftSpeeds[y[0]], " RPS: ", y[0])
     
-	)
-	#change to all values in range of hundredths place and take out the random test each of the values
-	for i in 20:
-		x = random.uniform(1.4, 1.7)
-		pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
-		pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
-		#gets speeds of wheels after it changes we will need to add in time wait for the specified number of seconds.
-		#along with a 1 second interval
-		y = getSpeeds()
-		#each time we get these speeds we will enter the values into our dictionary
-		#this will make it easier to print our graph
-		dict[x] = y
-		#and our function is finished just needs testing!
-	
-	
-#Will change the speed of the machine
-def setSpeeds(Rwheel,Lwheel):
-	RightW = Rwheel
-	LeftW = Lwheel
-	
-	#We can use our calibration function for speeds to get data to help with our setSpeeds function
-	SamountR = #calculation to decide what to change our Right pwm number to
-	SamountL = #calculation to decide what to change our Left pwm number to
-	
-	pwm.set_pwm(LSERVO, 0, math.floor(SamountL / 20 * 4096))
-	pwm.set_pwm(RSERVO, 0, math.floor(SamountR / 20 * 4096))
-   
-   
-#Will set the speed in rotations per second
-def setSpeedsRPS(Rwheel,Lwheel):
-	#using our set speed and calibrate function we should be able to go ahead and complete this function
+    #Calibrate Right Wheel
+    for j in range(150, 171):
+        x = float(j/100)
+        startTime = time.time()
+        pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
+        pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
+        time.sleep(1)
 
-#Will set the speed in inches per second
-def setSpeedsIPS(Rwheel,Lwheel):
-	#can calculate and log distance based on speed in dictionary just like our calibration
-	
-	
-#Start the timer
-startTime = time.time()
+        y = getSpeeds()
+        resetCounts()
 
-while True:
+        rightSpeeds[y[1]] = x
+        
+        print("Right wheel speed: ", rightSpeeds[y[1]], " RPS: ", y[1])
+
+    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
+
+ 
+#Set the speed of the motors based on RPS
+def setSpeedsRPS(rpsLeft, rpsRight):
+    print("SetSpeedsRPS -- nothing here")
+    #Find the speed in the dictionary closest to the inputted balue
+    
+#Set the speed based on inches per second
+def setSpeedsIPS(ipsLeft, ipsRight):
+    print("SetSpeedsIPS -- nothing here")
+    #calculate the RPS required for this
+    
+    #call SetSpeedsRPS
+    
+#Set the speed of the robot so that the robot will move with a linear speed given by
+#the parameter 'v' (in inches per second) with an angular velocity 'w' (radians per second)
+#Positive angular velocities should make the robot spin counterclockwise
+def setSpeedsvw(v, w):
+    print("SetSpeedsvw -- nothing here");
+    
+    #I have no idea how we are supposed to use two velocities in the same robot, making a circle?
+
+	
+while False:
     # Write a maximum value of 1.7 for each servo.
     # Since the servos are oriented in opposite directions,
     # the robot will end up spinning in one direction.
     # Values between 1.3 and 1.7 should be used.
     
-    onLeftEncode(LENCODER)
-    onRightEncode(RENCODER)
+    
     pwm.set_pwm(LSERVO, 0, math.floor(1.6 / 20 * 4096))
     pwm.set_pwm(RSERVO, 0, math.floor(1.6 / 20 * 4096))
     time.sleep(4)
@@ -212,6 +237,12 @@ while True:
     
     time.sleep(10)
 	
+initEncoders()
+while True:
+    calibrateSpeeds()
+    print(leftSpeeds)
+    print(rightSpeeds)
+    break
 	
 	
 	
@@ -219,7 +250,7 @@ def StartFunction():
 	initEncoders()
 	calibrateSpeeds()
 	
-	while true:
+	while True:
 		choice
 		print("Welcome please choose from our options below: ")
 		print("a = set speed via inches.")
@@ -234,10 +265,10 @@ def StartFunction():
 		elif choice == "c":
 			setSpeeds()
 		elif choice == "e":
-			break;
-			#could use a return statement here to end program will decide with you at lab
+			break
+		#could use a return statement here to end program will decide with you at lab
 		else:
-			print("Please choose a valid choice."
-			continue
+			print("Please choose a valid choice.")
+	    
 		
 		
