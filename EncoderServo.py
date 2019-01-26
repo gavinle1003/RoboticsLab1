@@ -123,21 +123,31 @@ pwm = Adafruit_PCA9685.PCA9685()
 # 50Hz is used for the frequency of the servos.
 pwm.set_pwm_freq(50)
 
-pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096));
-pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096));
+pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
 
 
 
 def calibrateSpeeds():
-    Initial speed data = dict(
-	0 = 0,
-    #Dictionary to initialize we will use our set speed as the key and it speed measurement as the value
+#Dictionary to initialize we will use our set speed as the key and it speed measurement as the value
 	#for our key value pair this will help us translate our user input into a new speed
 	#for RPS and IPS
+    Initial speed data = dict(
+	1.5 = (0.0,0.0),
+    
 	)
-	x = random.uniform(1.4, 1.7)
-	pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096));
-	pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096));
+	for i in 20:
+		x = random.uniform(1.4, 1.7)
+		pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
+		pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
+		#gets speeds of wheels after it changes we will need to add in time wait for the specified number of seconds.
+		#along with a 1 second interval
+		y = getSpeeds()
+		#each time we get these speeds we will enter the values into our dictionary
+		#this will make it easier to print our graph
+		dict[x] = y;
+		#and our function is finished just needs testing!
+	
 	
 #Will change the speed of the machine
 def setSpeeds(Rwheel,Lwheel):
