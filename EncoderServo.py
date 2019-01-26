@@ -136,6 +136,7 @@ def calibrateSpeeds():
 	1.5 = (0.0,0.0),
     
 	)
+	#change to all values in range of hundredths place and take out the random test each of the values
 	for i in 20:
 		x = random.uniform(1.4, 1.7)
 		pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
