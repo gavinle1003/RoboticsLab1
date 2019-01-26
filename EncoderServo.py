@@ -145,7 +145,7 @@ def calibrateSpeeds():
 		y = getSpeeds()
 		#each time we get these speeds we will enter the values into our dictionary
 		#this will make it easier to print our graph
-		dict[x] = y;
+		dict[x] = y
 		#and our function is finished just needs testing!
 	
 	
@@ -164,10 +164,13 @@ def setSpeeds(Rwheel,Lwheel):
    
 #Will set the speed in rotations per second
 def setSpeedsRPS(Rwheel,Lwheel):
+	#using our set speed and calibrate function we should be able to go ahead and complete this function
 
 #Will set the speed in inches per second
 def setSpeedsIPS(Rwheel,Lwheel):
-
+	#can calculate and log distance based on speed in dictionary just like our calibration
+	
+	
 #Start the timer
 startTime = time.time()
 
@@ -179,12 +182,12 @@ while True:
     
     onLeftEncode(LENCODER)
     onRightEncode(RENCODER)
-    pwm.set_pwm(LSERVO, 0, math.floor(1.6 / 20 * 4096));
-    pwm.set_pwm(RSERVO, 0, math.floor(1.6 / 20 * 4096));
+    pwm.set_pwm(LSERVO, 0, math.floor(1.6 / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(1.6 / 20 * 4096))
     time.sleep(4)
     print ("Speed: ", getSpeeds())
-    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096));
-    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096));
+    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
 
     print("Current Counts: ", lCount, " ", rCount)
     resetCounts()
@@ -194,8 +197,8 @@ while True:
     
     # Write a minimum value of 1.4 for each servo.
     # The robot will end up spinning in the other direction.
-    pwm.set_pwm(LSERVO, 0, math.floor(1.4 / 20 * 4096));
-    pwm.set_pwm(RSERVO, 0, math.floor(1.4 / 20 * 4096));
+    pwm.set_pwm(LSERVO, 0, math.floor(1.4 / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(1.4 / 20 * 4096))
     time.sleep(4)
     
     print ("Speed: ", getSpeeds())
@@ -207,3 +210,33 @@ while True:
     print("Previous counts: ", prev)
     
     time.sleep(10)
+	
+	
+	
+	
+def StartFunction():
+	initEncoders()
+	calibrateSpeeds()
+	
+	while true:
+		choice
+		print("Welcome please choose from our options below: ")
+		print("a = set speed via inches.")
+		print("b = set speed via RPS.")
+		print("c = set speed will set the general speed based on set of numbers still need to finish exactly which value this will pull.")
+		print("e = exit program.")
+		choice = raw_input("Please choose one and press enter!")
+		if choice == "a":
+			setSpeedsIPS()
+		elif choice == "b":
+			setSpeedsRPS()
+		elif choice == "c":
+			setSpeeds()
+		elif choice == "e":
+			break;
+			#could use a return statement here to end program will decide with you at lab
+		else:
+			print("Please choose a valid choice."
+			continue
+		
+		
