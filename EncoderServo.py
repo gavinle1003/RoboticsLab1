@@ -10,7 +10,7 @@ import signal
 import math
 import plotly.plotly as py
 import plotly.graph_objs as go
-
+import random
 rCount = 0   #current count for each wheel
 lCount = 0   
 prc = 0      #previous count
@@ -135,6 +135,10 @@ def calibrateSpeeds():
 	#for our key value pair this will help us translate our user input into a new speed
 	#for RPS and IPS
 	)
+	x = random.uniform(1.4, 1.7)
+	pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096));
+	pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096));
+	
 #Will change the speed of the machine
 def setSpeeds(Rwheel,Lwheel):
 	RightW = Rwheel
