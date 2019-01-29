@@ -18,8 +18,10 @@ prc = 0      #previous count
 plc = 0
 
 # For calibrate speeds, contains acccurate speeds
-leftSpeeds = {'0.0':'1.5'}
-rightSpeeds = {'0.0':'1.5'}
+leftFwdSpeeds = {'0.0':'1.5'}
+rightFwdSpeeds = {'0.0':'1.5'}
+leftBwdSpeeds = {'0.0':'1.5'}
+rightBwdSpeeds = {'0.0':'1.5'}
 
 startTime = time.time()    #current timer
 
@@ -144,7 +146,8 @@ def calibrateSpeeds():
     global startTime
 
     #Calibrate Left wheel
-    for i in range(130, 151):
+    i = 130
+    while i <= 150:
         x = float(i/100)
         startTime = time.time()
         pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
@@ -157,13 +160,16 @@ def calibrateSpeeds():
 
 	#each time we get these speeds we will enter the values into our dictionary
 	#this will make it easier to print our graph
-        leftSpeeds[y[0]] = x
+        leftFwdSpeeds[y[0]] = x
+        rightBwdSpeeds[y[1]] = x
         
-        print("Left wheel speed: ", leftSpeeds[y[0]], " RPS: ", y[0])
+        i+=5
+        
+        print("Left wheel forward speed: ", leftFwdSpeeds[y[0]], " RPS: ", y[0], "       Right wheel backward speed: ", rightBwdSpeeds[y[1]], " RPS: ", y[1])
     
     #Calibrate Right Wheel
-    for j in range(150, 171):
-        x = float(j/100)
+    while i <=170:
+        x = float(i/100)
         startTime = time.time()
         pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
         pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
@@ -172,9 +178,12 @@ def calibrateSpeeds():
         y = getSpeeds()
         resetCounts()
 
-        rightSpeeds[y[1]] = x
+        rightFwdSpeeds[y[1]] = x
+        leftBwdSpeeds[y[0]] = x
         
-        print("Right wheel speed: ", rightSpeeds[y[1]], " RPS: ", y[1])
+        i+=5
+        
+        print("Left wheel backwards speed: ", leftBwdSpeeds[y[0]], " RPS: ", y[0],"       Right wheel forward speed: ", rightFwdSpeeds[y[1]], " RPS: ", y[1])
 
     pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
     pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
@@ -240,8 +249,8 @@ while False:
 initEncoders()
 while True:
     calibrateSpeeds()
-    print(leftSpeeds)
-    print(rightSpeeds)
+    #print(leftSpeeds)
+    #print(rightSpeeds)
     break
 	
 	
