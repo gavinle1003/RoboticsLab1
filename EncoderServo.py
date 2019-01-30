@@ -3,6 +3,7 @@
 # as it will immediately begin moving.
 # See https://learn.adafruit.com/adafruit-16-channel-pwm-servo-hat-for-raspberry-pi/ for more details.
 
+import sys
 import time
 import Adafruit_PCA9685
 import RPi.GPIO as GPIO
@@ -146,17 +147,17 @@ def calibrateSpeeds():
     global startTime
 
     #Calibrate Left wheel
-    i = 130
-    while i <= 150:
+    i = 140
+    while i <=150:
         x = float(i/100)
+        resetCounts()
         startTime = time.time()
         pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
         pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
-        time.sleep(1)
+        time.sleep(2)
         #gets speeds of wheels after it changes we will need to add in time wait for the specified number of seconds.
 	#along with a 1 second interval
         y = getSpeeds()
-        resetCounts()
 
 	#each time we get these speeds we will enter the values into our dictionary
 	#this will make it easier to print our graph
@@ -167,16 +168,17 @@ def calibrateSpeeds():
         
         print("Left wheel forward speed: ", leftFwdSpeeds[y[0]], " RPS: ", y[0], "       Right wheel backward speed: ", rightBwdSpeeds[y[1]], " RPS: ", y[1])
     
+    
     #Calibrate Right Wheel
-    while i <=170:
+    while i <=160:
         x = float(i/100)
+        resetCounts()
         startTime = time.time()
         pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
         pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
-        time.sleep(1)
+        time.sleep(2)
 
         y = getSpeeds()
-        resetCounts()
 
         rightFwdSpeeds[y[1]] = x
         leftBwdSpeeds[y[0]] = x
@@ -190,9 +192,83 @@ def calibrateSpeeds():
 
  
 #Set the speed of the motors based on RPS
+#Negative RPS goes backwards
 def setSpeedsRPS(rpsLeft, rpsRight):
-    print("SetSpeedsRPS -- nothing here")
-    #Find the speed in the dictionary closest to the inputted balue
+    leftRpsFloor = -1
+    leftRpsCeiling = -1
+    leftPwmFloor = 0
+    leftPwmCeiling = 0
+    leftSpeed = 1.5
+    
+    rightRpsFloor = -1
+    rightRpsCeiling = -1
+    rightPwmFloor = 0
+    rightPwmCeiling = 0
+    rightSpeed = 1.5
+    
+    #Find the two calibrated RPS speeds closest to the inputted RPS
+    
+    if (rpsLeft >= 0):  #forwards left
+        for rps, pwm in leftFwdSpeeds.items():
+            #Find floor
+            if(float(rps) < rpsLeft and (leftRpsFloor == -1 or (rpsLeft - float(rps) < leftRpsFloor - float(rps)))):
+                leftRpsFloor = float(rps)
+                leftPwmFloor = pwm
+            #Find ceiling 
+            if(float(rps) > rpsLeft and (leftRpsCeiling == -1 or (float(rps) - rpsLeft < float(rps) - leftRpsCeiling))):
+                leftRpsCeiling = float(rps)
+                leftPwmCeiling = pwm
+        print("Foward Left RPS Floor: ", leftRpsFloor, "    Foward Left RPS Ceiling: ", leftRpsCeiling)
+
+            
+    
+    else:  #backwards left
+        rpsLeft *= -1 #make this positive for correct comparisions
+        for rps, pwm in leftBwdSpeeds.items(): #uses pwm that results in backwards motion
+            #Find floor
+            if(float(rps) < rpsLeft and (leftRpsFloor == -1 or (rpsLeft - float(rps) < leftRpsFloor - float(rps)))):
+                leftRpsFloor = float(rps)
+                leftPwmFloor = pwm
+                            #Find ceiling 
+            if(float(rps) > rpsLeft and (leftRpsCeiling == -1 or (float(rps) - rpsLeft < float(rps) - leftRpsCeiling))):
+                leftRpsCeiling = float(rps)
+                leftPwmCeiling = pwm
+        print("Backwords Left RPS Floor: ", leftRpsFloor, "     Left RPS Ceiling: ", leftRpsCeiling)
+       
+    
+            
+    if (rpsRight > 0):  #forwards right
+        for rps, pwm in rightFwdSpeeds.items():
+            #Find floor
+            if(float(rps) < rpsRight and (rightRpsFloor == -1 or (rpsRight - float(rps) < rightRpsFloor - float(rps)))):
+                rightRpsFloor = float(rps)
+                rightPwmFloor = pwm
+
+            #Find ceiling 
+            if(float(rps) > rpsRight and (rightRpsCeiling == -1 or (float(rps) - rpsRight < float(rps) - rightRpsCeiling))):
+                rightRpsCeiling = float(rps)
+                rightPwmCeiling = pwm
+        print("Foward Right RPS Floor: ", rightRpsFloor, "     Right RPS Ceiling: ", rightRpsCeiling)
+
+        
+    else:  #backwards right
+        rpsRight *= -1 #make this positive for correct comparisons
+        for rps, pwm in rightBwdSpeeds.items():  #uses pwm that results in backwards motion
+            #Find floor
+            if(float(rps) < rpsRight and (rightRpsFloor == -1 or (rpsRight - float(rps) < rightRpsFloor - float(rps)))):
+                rightRpsFloor = float(rps)
+                rightPwmFloor = pwm
+                
+            #Find ceiling 
+            if(float(rps) > rpsRight and (rightRpsCeiling == -1 or (float(rps) - rpsRight < float(rps) - rightRpsCeiling))):
+                rightRpsCeiling = float(rps)
+                rightPwmCeiling = pwm
+        print("Backwards Right RPS Floor: ", rightRpsFloor, "    Backwards Right RPS Ceiling: ", rightRpsCeiling)
+                
+        
+    
+    
+    #Find the ratio between the two values, multiply desired rps by that for the PWM
     
 #Set the speed based on inches per second
 def setSpeedsIPS(ipsLeft, ipsRight):
@@ -249,6 +325,16 @@ while False:
 initEncoders()
 while True:
     calibrateSpeeds()
+    x = 0.1
+    while (x < 0.8):
+        print("desired rpm: ", x)
+        setSpeedsRPS(x, x)
+        x+= 0.1
+    x = -0.1
+    while (x > -0.8):
+        print("desired rpm: ", x)
+        setSpeedsRPS(x, x)
+        x-=0.1
     #print(leftSpeeds)
     #print(rightSpeeds)
     break
