@@ -19,10 +19,10 @@ prc = 0      #previous count
 plc = 0
 
 # For calibrate speeds, contains acccurate speeds
-leftFwdSpeeds = {'0.0':'1.5'}
-rightFwdSpeeds = {'0.0':'1.5'}
-leftBwdSpeeds = {'0.0':'1.5'}
-rightBwdSpeeds = {'0.0':'1.5'}
+leftFwdSpeeds = {}
+rightFwdSpeeds = {}
+leftBwdSpeeds = {}
+rightBwdSpeeds = {}
 
 startTime = time.time()    #current timer
 
@@ -148,7 +148,7 @@ def calibrateSpeeds():
 
     #Calibrate Left wheel
     i = 140
-    while i <=150:
+    while i < 150:
         x = float(i/100)
         resetCounts()
         startTime = time.time()
@@ -161,13 +161,38 @@ def calibrateSpeeds():
 
 	#each time we get these speeds we will enter the values into our dictionary
 	#this will make it easier to print our graph
-        leftFwdSpeeds[y[0]] = x
-        rightBwdSpeeds[y[1]] = x
+        leftBwdSpeeds[x] = y[0]
+        rightFwdSpeeds[x] = y[1]
         
         i+=5
         
-        print("Left wheel forward speed: ", leftFwdSpeeds[y[0]], " RPS: ", y[0], "       Right wheel backward speed: ", rightBwdSpeeds[y[1]], " RPS: ", y[1])
+        print("Left wheel forward speed: ", x, " RPS: ", y[0], "       Right wheel backward speed: ", x, " RPS: ", y[1])
     
+    #Add the value for stopped to all four maps
+    x = float(i/100)
+    resetCounts()
+    startTime = time.time()
+    pwm.set_pwm(LSERVO, 0, math.floor(x / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(x / 20 * 4096))
+    time.sleep(2)
+        #gets speeds of wheels after it changes we will need to add in time wait for the specified number of seconds.
+	#along with a 1 second interval
+    y = getSpeeds()
+
+	#each time we get these speeds we will enter the values into our dictionary
+	#this will make it easier to print our graph
+    leftFwdSpeeds[x] = y[0]
+    leftBwdSpeeds[x] = y[0]
+    rightFwdSpeeds[x] = y[1]
+    rightBwdSpeeds[x] = y[1]
+    
+        
+    i+=5
+        
+    print("Left wheel stopped speed: ", x, " RPS: ", y[0], "       Right wheel stopped speed: ", x, " RPS: ", y[1])
+    
+    
+
     
     #Calibrate Right Wheel
     while i <=160:
@@ -180,95 +205,125 @@ def calibrateSpeeds():
 
         y = getSpeeds()
 
-        rightFwdSpeeds[y[1]] = x
-        leftBwdSpeeds[y[0]] = x
+        rightBwdSpeeds[x] = y[1]
+        leftFwdSpeeds[x] = y[0]
         
         i+=5
         
-        print("Left wheel backwards speed: ", leftBwdSpeeds[y[0]], " RPS: ", y[0],"       Right wheel forward speed: ", rightFwdSpeeds[y[1]], " RPS: ", y[1])
+        print("Left wheel backwards speed: ", x, " RPS: ", y[0],"       Right wheel forward speed: ", x, " RPS: ", y[1])
 
     pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
     pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
+    print(rightFwdSpeeds)
+    print(rightBwdSpeeds)
+    print(leftFwdSpeeds)
+    print(leftBwdSpeeds)
 
  
 #Set the speed of the motors based on RPS
 #Negative RPS goes backwards
 def setSpeedsRPS(rpsLeft, rpsRight):
-    leftRpsFloor = -1
-    leftRpsCeiling = -1
-    leftPwmFloor = 0
-    leftPwmCeiling = 0
-    leftSpeed = 1.5
+    LPWM = 1.5
+    RPWM = 1.5
+    LfloorPWM = 1.5
+    LceilingPWM = 1.5
+    RfloorPWM = 1.5
+    RceilingPWM = 1.5
     
-    rightRpsFloor = -1
-    rightRpsCeiling = -1
-    rightPwmFloor = 0
-    rightPwmCeiling = 0
-    rightSpeed = 1.5
     
-    #Find the two calibrated RPS speeds closest to the inputted RPS
-    
-    if (rpsLeft >= 0):  #forwards left
-        for rps, pwm in leftFwdSpeeds.items():
-            #Find floor
-            if(float(rps) < rpsLeft and (leftRpsFloor == -1 or (rpsLeft - float(rps) < leftRpsFloor - float(rps)))):
-                leftRpsFloor = float(rps)
-                leftPwmFloor = pwm
-            #Find ceiling 
-            if(float(rps) > rpsLeft and (leftRpsCeiling == -1 or (float(rps) - rpsLeft < float(rps) - leftRpsCeiling))):
-                leftRpsCeiling = float(rps)
-                leftPwmCeiling = pwm
-        print("Foward Left RPS Floor: ", leftRpsFloor, "    Foward Left RPS Ceiling: ", leftRpsCeiling)
-
+    #Forwards Left 
+    if(rpsLeft > 0):
+        #rpsLeft is faster than what is possible
+        if(leftFwdSpeeds[1.6] < rpsLeft):
+            print("Left wheel rps is not possible, I'm just going to do my best")
+            LPWM = 1.6
+        else:
+            #rpsLeft is in between 1.4 and 1.45 pwm
+            if((leftFwdSpeeds[1.6] >= rpsLeft) and (rpsLeft > leftFwdSpeeds[1.55])):
+                LfloorPWM = 1.55
+                LceilingPWM = 1.6
+            #rpsLeft is in between 1.45 and 1.5 pwm
+            if((leftFwdSpeeds[1.55] >= rpsLeft) and (rpsLeft > leftFwdSpeeds[1.5])):
+                LfloorPWM = 1.5
+                LceilingPWM = 1.55
+            print("Left Floor RPS: ", leftFwdSpeeds[LfloorPWM], "       Left Ceiling RPS: ", leftFwdSpeeds[LceilingPWM])
             
-    
-    else:  #backwards left
-        rpsLeft *= -1 #make this positive for correct comparisions
-        for rps, pwm in leftBwdSpeeds.items(): #uses pwm that results in backwards motion
-            #Find floor
-            if(float(rps) < rpsLeft and (leftRpsFloor == -1 or (rpsLeft - float(rps) < leftRpsFloor - float(rps)))):
-                leftRpsFloor = float(rps)
-                leftPwmFloor = pwm
-                            #Find ceiling 
-            if(float(rps) > rpsLeft and (leftRpsCeiling == -1 or (float(rps) - rpsLeft < float(rps) - leftRpsCeiling))):
-                leftRpsCeiling = float(rps)
-                leftPwmCeiling = pwm
-        print("Backwords Left RPS Floor: ", leftRpsFloor, "     Left RPS Ceiling: ", leftRpsCeiling)
-       
-    
+            #Find slope based on floor and ceiling, where PWM is y and rps is x
+            slope = float((LceilingPWM - LfloorPWM) / (leftFwdSpeeds[LceilingPWM] - leftFwdSpeeds[LfloorPWM]))
+            LPWM = float((slope * rpsLeft) + 1.5)  #1.5 is stopped, so our y-intercept
+        print("LPWM: ", LPWM, "\n")
+        
+        
+    #Backwards Left        
+    if(rpsLeft < 0):
+        #rpsLeft is faster than what is possible
+        if(leftBwdSpeeds[1.4] < (rpsLeft * -1)):
+            print("Left wheel rps is not possible, I'm just going to do my best")
+            LPWM = 1.4
+        else:
+            #rpsLeft is in between 1.4 and 1.45 pwm
+            if((leftBwdSpeeds[1.4] >= (rpsLeft * -1)) and ((rpsLeft * -1) > leftBwdSpeeds[1.45])):
+                LfloorPWM = 1.45
+                LceilingPWM = 1.4
+            #rpsLeft is in between 1.45 and 1.5 pwm
+            if((leftBwdSpeeds[1.45] >= (rpsLeft * -1)) and ((rpsLeft * -1) > leftBwdSpeeds[1.5])):
+                LfloorPWM = 1.5
+                LceilingPWM = 1.45
+            print("Left Floor RPS: ", leftBwdSpeeds[LfloorPWM], "       Left Ceiling RPS: ", leftBwdSpeeds[LceilingPWM])
             
-    if (rpsRight > 0):  #forwards right
-        for rps, pwm in rightFwdSpeeds.items():
-            #Find floor
-            if(float(rps) < rpsRight and (rightRpsFloor == -1 or (rpsRight - float(rps) < rightRpsFloor - float(rps)))):
-                rightRpsFloor = float(rps)
-                rightPwmFloor = pwm
-
-            #Find ceiling 
-            if(float(rps) > rpsRight and (rightRpsCeiling == -1 or (float(rps) - rpsRight < float(rps) - rightRpsCeiling))):
-                rightRpsCeiling = float(rps)
-                rightPwmCeiling = pwm
-        print("Foward Right RPS Floor: ", rightRpsFloor, "     Right RPS Ceiling: ", rightRpsCeiling)
-
+            #Find slope based on floor and ceiling, where PWM is y and rps is x
+            slope = float((LceilingPWM - LfloorPWM) / (leftBwdSpeeds[LceilingPWM] - leftBwdSpeeds[LfloorPWM]))
+            LPWM = float((slope * (rpsLeft * -1)) + 1.5)  #1.5 is stopped, so our y-intercept
+        print("LPWM: ", LPWM, "\n")
+              
+    #Forwards Right
+    if(rpsRight > 0):
+        #rpsLeft is faster than what is possible
+        if(rightFwdSpeeds[1.4] < rpsRight):
+            print("Right wheel rps is not possible, I'm just going to do my best")
+            RPWM = 1.4
+        else: 
+            #rpsLeft is in between 1.4 and 1.45 pwm
+            if((rightFwdSpeeds[1.4] >= rpsRight) and (rpsRight > rightFwdSpeeds[1.45])):
+                RfloorPWM = 1.45
+                RceilingPWM = 1.4
+            #rpsLeft is in between 1.45 and 1.5 pwm
+            if((rightFwdSpeeds[1.45] >= rpsRight) and (rpsRight > rightFwdSpeeds[1.5])):
+                RfloorPWM = 1.5
+                RceilingPWM = 1.45
+            print("Right Floor RPS: ", rightFwdSpeeds[RfloorPWM], "       Right Ceiling RPS: ", rightFwdSpeeds[RceilingPWM])
+            
+            #Find slope based on floor and ceiling, where PWM is y and rps is x
+            slope = float((RceilingPWM - RfloorPWM) / (rightFwdSpeeds[RceilingPWM] - rightFwdSpeeds[RfloorPWM]))
+            RPWM = float((slope * rpsRight) + 1.5)  #1.5 is stopped, so our y-intercept
+        print("RPWM: ", RPWM, "\n")
         
-    else:  #backwards right
-        rpsRight *= -1 #make this positive for correct comparisons
-        for rps, pwm in rightBwdSpeeds.items():  #uses pwm that results in backwards motion
-            #Find floor
-            if(float(rps) < rpsRight and (rightRpsFloor == -1 or (rpsRight - float(rps) < rightRpsFloor - float(rps)))):
-                rightRpsFloor = float(rps)
-                rightPwmFloor = pwm
-                
-            #Find ceiling 
-            if(float(rps) > rpsRight and (rightRpsCeiling == -1 or (float(rps) - rpsRight < float(rps) - rightRpsCeiling))):
-                rightRpsCeiling = float(rps)
-                rightPwmCeiling = pwm
-        print("Backwards Right RPS Floor: ", rightRpsFloor, "    Backwards Right RPS Ceiling: ", rightRpsCeiling)
-                
+    #Backwards Right
+    if(rpsRight < 0):
+        #rpsLeft is faster than what is possible
+        if(rightBwdSpeeds[1.6] < (rpsRight * -1)):
+            print("Right wheel rps is not possible, I'm just going to do my best")
+            RPWM = 1.6
+        else: 
+            #rpsLeft is in between 1.4 and 1.45 pwm
+            if((rightBwdSpeeds[1.6] >= (rpsRight * -1)) and ((rpsRight * -1) > rightBwdSpeeds[1.55])):
+                RfloorPWM = 1.55
+                RceilingPWM = 1.6
+            #rpsLeft is in between 1.45 and 1.5 pwm
+            if((rightBwdSpeeds[1.55] >= (rpsRight * -1)) and ((rpsRight * -1) > rightBwdSpeeds[1.5])):
+                RfloorPWM = 1.5
+                RceilingPWM = 1.55
+            print("Right Floor RPS: ", rightBwdSpeeds[RfloorPWM], "       Right Ceiling RPS: ", rightBwdSpeeds[RceilingPWM])
+            
+            #Find slope based on floor and ceiling, where PWM is y and rps is x
+            slope = float((RceilingPWM - RfloorPWM) / (rightBwdSpeeds[RceilingPWM] - rightBwdSpeeds[RfloorPWM]))
+            RPWM = float((slope * (rpsRight * -1)) + 1.5)  #1.5 is stopped, so our y-intercept
+        print("RPWM: ", RPWM, "\n")
         
+    #Set the speeds based off of the calculations
+    pwm.set_pwm(LSERVO, 0, math.floor(LPWM / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(RPWM / 20 * 4096))
     
-    
-    #Find the ratio between the two values, multiply desired rps by that for the PWM
     
 #Set the speed based on inches per second
 def setSpeedsIPS(ipsLeft, ipsRight):
@@ -327,14 +382,20 @@ while True:
     calibrateSpeeds()
     x = 0.1
     while (x < 0.8):
-        print("desired rpm: ", x)
+        print("\ndesired rpm: ", x)
         setSpeedsRPS(x, x)
-        x+= 0.1
+        time.sleep(1)
+        x+=0.1
+    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
     x = -0.1
     while (x > -0.8):
-        print("desired rpm: ", x)
+        print("\ndesired rpm: ", x)
         setSpeedsRPS(x, x)
+        time.sleep(1)
         x-=0.1
+    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
     #print(leftSpeeds)
     #print(rightSpeeds)
     break
