@@ -9,8 +9,6 @@ import Adafruit_PCA9685
 import RPi.GPIO as GPIO
 import signal
 import math
-#import plotly.plotly as py
-#import plotly.graph_objs as go
 import random
 
 rCount = 0   #current count for each wheel
@@ -98,6 +96,10 @@ def getSpeeds():
     else:
         rSpeed = 0
     return (lSpeed, rSpeed)
+
+
+
+	
 
 # Code necessary to initialize the encoders
 def initEncoders():
@@ -234,8 +236,7 @@ def setSpeedsRPS(rpsLeft, rpsRight):
     #Forwards Left 
     if(rpsLeft > 0):
         #rpsLeft is faster than what is possible
-        if(leftFwdSpeeds[1.6] < rpsLeft):
-            print("Left wheel rps is not possible, I'm just going to do my best")
+        if(leftFwdSpeeds[1.6] <= rpsLeft):
             LPWM = 1.6
         else:
             #rpsLeft is in between 1.4 and 1.45 pwm
@@ -246,19 +247,15 @@ def setSpeedsRPS(rpsLeft, rpsRight):
             if((leftFwdSpeeds[1.55] >= rpsLeft) and (rpsLeft > leftFwdSpeeds[1.5])):
                 LfloorPWM = 1.5
                 LceilingPWM = 1.55
-            print("Left Floor RPS: ", leftFwdSpeeds[LfloorPWM], "       Left Ceiling RPS: ", leftFwdSpeeds[LceilingPWM])
-            
+        
             #Find slope based on floor and ceiling, where PWM is y and rps is x
             slope = float((LceilingPWM - LfloorPWM) / (leftFwdSpeeds[LceilingPWM] - leftFwdSpeeds[LfloorPWM]))
             LPWM = float((slope * rpsLeft) + 1.5)  #1.5 is stopped, so our y-intercept
-        print("LPWM: ", LPWM, "\n")
-        
         
     #Backwards Left        
     if(rpsLeft < 0):
         #rpsLeft is faster than what is possible
-        if(leftBwdSpeeds[1.4] < (rpsLeft * -1)):
-            print("Left wheel rps is not possible, I'm just going to do my best")
+        if(leftBwdSpeeds[1.4] <= (rpsLeft * -1)):
             LPWM = 1.4
         else:
             #rpsLeft is in between 1.4 and 1.45 pwm
@@ -269,18 +266,15 @@ def setSpeedsRPS(rpsLeft, rpsRight):
             if((leftBwdSpeeds[1.45] >= (rpsLeft * -1)) and ((rpsLeft * -1) > leftBwdSpeeds[1.5])):
                 LfloorPWM = 1.5
                 LceilingPWM = 1.45
-            print("Left Floor RPS: ", leftBwdSpeeds[LfloorPWM], "       Left Ceiling RPS: ", leftBwdSpeeds[LceilingPWM])
-            
+        
             #Find slope based on floor and ceiling, where PWM is y and rps is x
             slope = float((LceilingPWM - LfloorPWM) / (leftBwdSpeeds[LceilingPWM] - leftBwdSpeeds[LfloorPWM]))
             LPWM = float((slope * (rpsLeft * -1)) + 1.5)  #1.5 is stopped, so our y-intercept
-        print("LPWM: ", LPWM, "\n")
               
     #Forwards Right
     if(rpsRight > 0):
         #rpsLeft is faster than what is possible
-        if(rightFwdSpeeds[1.4] < rpsRight):
-            print("Right wheel rps is not possible, I'm just going to do my best")
+        if(rightFwdSpeeds[1.4] <= rpsRight):
             RPWM = 1.4
         else: 
             #rpsLeft is in between 1.4 and 1.45 pwm
@@ -291,18 +285,15 @@ def setSpeedsRPS(rpsLeft, rpsRight):
             if((rightFwdSpeeds[1.45] >= rpsRight) and (rpsRight > rightFwdSpeeds[1.5])):
                 RfloorPWM = 1.5
                 RceilingPWM = 1.45
-            print("Right Floor RPS: ", rightFwdSpeeds[RfloorPWM], "       Right Ceiling RPS: ", rightFwdSpeeds[RceilingPWM])
             
             #Find slope based on floor and ceiling, where PWM is y and rps is x
             slope = float((RceilingPWM - RfloorPWM) / (rightFwdSpeeds[RceilingPWM] - rightFwdSpeeds[RfloorPWM]))
             RPWM = float((slope * rpsRight) + 1.5)  #1.5 is stopped, so our y-intercept
-        print("RPWM: ", RPWM, "\n")
         
     #Backwards Right
     if(rpsRight < 0):
         #rpsLeft is faster than what is possible
-        if(rightBwdSpeeds[1.6] < (rpsRight * -1)):
-            print("Right wheel rps is not possible, I'm just going to do my best")
+        if(rightBwdSpeeds[1.6] <= (rpsRight * -1)):
             RPWM = 1.6
         else: 
             #rpsLeft is in between 1.4 and 1.45 pwm
@@ -313,13 +304,13 @@ def setSpeedsRPS(rpsLeft, rpsRight):
             if((rightBwdSpeeds[1.55] >= (rpsRight * -1)) and ((rpsRight * -1) > rightBwdSpeeds[1.5])):
                 RfloorPWM = 1.5
                 RceilingPWM = 1.55
-            print("Right Floor RPS: ", rightBwdSpeeds[RfloorPWM], "       Right Ceiling RPS: ", rightBwdSpeeds[RceilingPWM])
             
             #Find slope based on floor and ceiling, where PWM is y and rps is x
             slope = float((RceilingPWM - RfloorPWM) / (rightBwdSpeeds[RceilingPWM] - rightBwdSpeeds[RfloorPWM]))
             RPWM = float((slope * (rpsRight * -1)) + 1.5)  #1.5 is stopped, so our y-intercept
-        print("RPWM: ", RPWM, "\n")
         
+    print("LPWM: ", LPWM)
+    print("RPWM: ", RPWM)
     #Set the speeds based off of the calculations
     pwm.set_pwm(LSERVO, 0, math.floor(LPWM / 20 * 4096))
     pwm.set_pwm(RSERVO, 0, math.floor(RPWM / 20 * 4096))
@@ -327,19 +318,57 @@ def setSpeedsRPS(rpsLeft, rpsRight):
     
 #Set the speed based on inches per second
 def setSpeedsIPS(ipsLeft, ipsRight):
-    print("SetSpeedsIPS -- nothing here")
-    #calculate the RPS required for this
-    
-    #call SetSpeedsRPS
+
+	#We know how many inches is a full rotation and we can go ahead and see how many rotations we want to travel and then apply it
+	circumference = 3.14 * 2.61
+	#inches per sec can be turned to RPS by dividing what was traveled by the total circumference of the wheel
+	ILeft = ipsLeft/circumference
+	IRight = ipsRight/circumference
+	#Then we plug in here in order to set the speeds using our RPS function and the speeds used in its dictionaries
+	setSpeedsRPS(ILeft,IRight)
+
     
 #Set the speed of the robot so that the robot will move with a linear speed given by
 #the parameter 'v' (in inches per second) with an angular velocity 'w' (radians per second)
 #Positive angular velocities should make the robot spin counterclockwise
 def setSpeedsvw(v, w):
-    print("SetSpeedsvw -- nothing here");
-    
-    #I have no idea how we are supposed to use two velocities in the same robot, making a circle?
+    absAngular = abs(w)
+#We will get our Radius again by using our velocity and angular velocity
+    Radius = abs(v/w)
 
+#Dmid is about 2 inches
+    dMid = 2
+#We get our velocities for left and right wheel
+    vRight = absAngular * (Radius + dMid)
+    vLeft = absAngular * (Radius - dMid)
+    
+    if w < 0:
+        setSpeedsIPS(vRight, vLeft)
+    else:
+        setSpeedsIPS(vLeft, vRight)
+        
+#We set the speeds IPS
+    print("Radius: ", Radius)
+    print("vRight: ", vRight)
+    print("vLeft: ", vLeft)
+
+    
+def getMaxLeftFwd():
+    #1.6
+    return leftFwdSpeeds[1.6]   
+
+def getMaxRightFwd():
+    #1.3
+    return rightFwdSpeeds[1.4]
+    
+def getMaxLeftBwd():
+    #1.3
+    return leftBwdSpeeds[1.4]
+
+def getMaxRightBwd():
+    #1.6
+    return rightBwdSpeeds[1.6]
+	
 	
 while False:
     # Write a maximum value of 1.7 for each servo.
@@ -377,54 +406,27 @@ while False:
     
     time.sleep(10)
 	
-initEncoders()
-while True:
-    calibrateSpeeds()
-    x = 0.1
-    while (x < 0.8):
-        print("\ndesired rpm: ", x)
-        setSpeedsRPS(x, x)
-        time.sleep(1)
-        x+=0.1
-    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
-    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
-    x = -0.1
-    while (x > -0.8):
-        print("\ndesired rpm: ", x)
-        setSpeedsRPS(x, x)
-        time.sleep(1)
-        x-=0.1
-    pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
-    pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
-    #print(leftSpeeds)
-    #print(rightSpeeds)
-    break
-	
-	
-	
-def StartFunction():
+if False:
 	initEncoders()
-	calibrateSpeeds()
-	
 	while True:
-		choice
-		print("Welcome please choose from our options below: ")
-		print("a = set speed via inches.")
-		print("b = set speed via RPS.")
-		print("c = set speed will set the general speed based on set of numbers still need to finish exactly which value this will pull.")
-		print("e = exit program.")
-		choice = raw_input("Please choose one and press enter!")
-		if choice == "a":
-			setSpeedsIPS()
-		elif choice == "b":
-			setSpeedsRPS()
-		elif choice == "c":
-			setSpeeds()
-		elif choice == "e":
-			break
-		#could use a return statement here to end program will decide with you at lab
-		else:
-			print("Please choose a valid choice.")
-	    
-		
-		
+		calibrateSpeeds()
+		x = 0.1
+		while (x < 0.8):
+			print("\ndesired rpm: ", x)
+			setSpeedsRPS(x, x)
+			time.sleep(1)
+			x+=0.1
+		pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+		pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
+		x = -0.1
+		while (x > -0.8):
+			print("\ndesired rpm: ", x)
+			setSpeedsRPS(x, x)
+			time.sleep(1)
+			x-=0.1
+		pwm.set_pwm(LSERVO, 0, math.floor(1.5 / 20 * 4096))
+		pwm.set_pwm(RSERVO, 0, math.floor(1.5 / 20 * 4096))
+		break
+	
+	
+	
